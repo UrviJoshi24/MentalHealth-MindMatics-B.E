@@ -47,7 +47,7 @@ const Home = () => {
       title: "Use VIDEO TESTING for better insights",
       background: `url(${videoimage})`,
       customStyle: { bottom: "30px", left: "-40px" },
-      route: "/video-testing",
+      route: "/video-based-detection",
     },
     {
       title: "Mindful Moments: Your Personal Diary",

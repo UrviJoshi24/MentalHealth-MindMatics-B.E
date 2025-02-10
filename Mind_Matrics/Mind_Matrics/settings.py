@@ -33,6 +33,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+
 # Django REST Framework settings
 REST_FRAMEWORK = {
     # Specify the authentication method to use JWT (JSON Web Token) authentication.
@@ -51,7 +56,7 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     # Specifies how long the access token will remain valid.
     # In this case, the access token will expire after 30 minutes.
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),  # Access token valid for 30 minutes
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=40),  # Access token valid for 30 minutes
 
     # Specifies how long the refresh token will remain valid.
     # In this case, the refresh token will expire after 1 day.
@@ -69,12 +74,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'userauth.apps.UserauthConfig',
+    'Video.apps.VideoConfig', 
     'rest_framework',
     'corsheaders',
     # 'userauth',
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -82,11 +89,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "corsheaders.middleware.CorsMiddleware",
+    
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWS_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = True  
 
 ROOT_URLCONF = 'Mind_Matrics.urls'
 
@@ -164,3 +171,4 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+

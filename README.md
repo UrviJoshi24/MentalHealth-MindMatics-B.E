@@ -51,3 +51,7 @@ necessary libraries need to be installed:
 -> npm install axios react-router-dom jwt-decoder 
 -> npm install jwt-decode 
 
+Install: npm install react-dropzone
+pip install gradio_client
+npm install react-heatmap-grid
+pip install numpy
