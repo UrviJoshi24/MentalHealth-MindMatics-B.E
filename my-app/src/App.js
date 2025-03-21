@@ -10,6 +10,8 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Questionnaire from "./pages/Questionnnaire";
 import VideoDetection from "./pages/VideoDetection";
+import Diary from "./pages/Diary";
+import ExperienceFlow from "./pages/ExperienceFlow";
 
 function Logout(){
   localStorage.clear()
@@ -28,6 +30,8 @@ function App() {
         <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>}/>
         <Route path="/questionnaire" element={<Questionnaire/>}/>
         <Route path="/video-based-detection" element={<VideoDetection />} />
+        <Route path="/diary" element={<Diary />} />
+        <Route path="/ExperienceFlow" element={<ExperienceFlow/>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
