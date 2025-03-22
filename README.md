@@ -57,3 +57,5 @@ Install: -> npm install react-dropzone
 
 Yash changes merged 
 New changes add in experienceflow, mediadata, getrandomizedquestions, Video(views.py)
+
+npm install @react-google-maps/api

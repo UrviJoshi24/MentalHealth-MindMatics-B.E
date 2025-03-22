@@ -12,6 +12,8 @@ import Questionnaire from "./pages/Questionnnaire";
 import VideoDetection from "./pages/VideoDetection";
 import Diary from "./pages/Diary";
 import ExperienceFlow from "./pages/ExperienceFlow";
+import PersonalizedRecommendation from "./pages/PersonalizedRecommendation";
+
 
 function Logout(){
   localStorage.clear()
@@ -32,6 +34,7 @@ function App() {
         <Route path="/video-based-detection" element={<VideoDetection />} />
         <Route path="/diary" element={<Diary />} />
         <Route path="/ExperienceFlow" element={<ExperienceFlow/>} />
+        <Route path="/PersonalizedRecommendation" element={<PersonalizedRecommendation />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
