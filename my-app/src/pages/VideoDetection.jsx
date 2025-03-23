@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import videobgimage from "../assets/images/video-bg-1.jpg";
+// import videobgimage from "../assets/images/video-bg-1.jpg";
 import api from "../api";
 import { ACCESS_TOKEN } from "../constants";
-
+import StressReliefRecommendations from "../components/StressReliefRecommendations";
 const VideoDetection = () => {
   const [selectedTab, setSelectedTab] = useState("upload");
   const [videoFile, setVideoFile] = useState({ preview: null, blob: null });
@@ -95,7 +95,7 @@ const VideoDetection = () => {
   };
 
   return (
-    <div className="h-screen bg-cover bg-center flex flex-col items-center text-center p-6 bg-repeat" style={{ backgroundImage: `url(${videobgimage})` }}>
+    <div className="bg-cover" >
       <h1 className="text-3xl font-bold mt-6 text-green-600">Video Emotion Detection</h1>
       <p className="text-lg mt-4 max-w-2xl text-blue-600">
         Detect emotions from videos in real-time for mental health analysis.
@@ -162,8 +162,10 @@ const VideoDetection = () => {
             </div>
           </div>
         )}
+        <StressReliefRecommendations/>
       </div>
     </div>
+    
   );
 };
 
