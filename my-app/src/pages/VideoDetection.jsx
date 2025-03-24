@@ -3,7 +3,7 @@ import { useDropzone } from "react-dropzone";
 // import videobgimage from "../assets/images/video-bg-1.jpg";
 import api from "../api";
 import { ACCESS_TOKEN } from "../constants";
-import StressReliefRecommendations from "../components/StressReliefRecommendations";
+import CustomCallRecordButton from "../components/CustomCallRecordButton";
 const VideoDetection = () => {
   const [selectedTab, setSelectedTab] = useState("upload");
   const [videoFile, setVideoFile] = useState({ preview: null, blob: null });
@@ -162,7 +162,7 @@ const VideoDetection = () => {
             </div>
           </div>
         )}
-        <StressReliefRecommendations/>
+        <CustomCallRecordButton/>
       </div>
     </div>
     

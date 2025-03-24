@@ -25,21 +25,28 @@
 //   return selectedQuestions;
 // };
 export const getRandomizedQuestions = (media) => {
-  const happyQuestions = media.Happy || [];
-  const sadQuestions = media.Sad || [];
+  const depressionQuestions = media.depressionVideos || [];
+  const anxietyQuestions = media.anxietyVideos || [];
+  const stressQuestions = media.stressVideos || [];
 
   let selectedQuestions = [];
 
-  // Step 1: Shuffle and select first 3 questions from Happy
-  const shuffledHappy = happyQuestions.sort(() => Math.random() - 0.5);
-  for (let i = 0; i < 3 && shuffledHappy.length > 0; i++) {
-    selectedQuestions.push(shuffledHappy.pop());
+  // Step 1: Shuffle and select 2 questions from Depression
+  const shuffledDepression = depressionQuestions.sort(() => Math.random() - 0.5);
+  for (let i = 0; i < 2 && shuffledDepression.length > 0; i++) {
+    selectedQuestions.push(shuffledDepression.pop());
   }
 
-  // Step 2: Shuffle and select next 3 questions from Sad
-  const shuffledSad = sadQuestions.sort(() => Math.random() - 0.5);
-  for (let i = 0; i < 3 && shuffledSad.length > 0; i++) {
-    selectedQuestions.push(shuffledSad.pop());
+  // Step 2: Shuffle and select 2 questions from Anxiety
+  const shuffledAnxiety = anxietyQuestions.sort(() => Math.random() - 0.5);
+  for (let i = 0; i < 2 && shuffledAnxiety.length > 0; i++) {
+    selectedQuestions.push(shuffledAnxiety.pop());
+  }
+
+  // Step 3: Shuffle and select 2 questions from Stress
+  const shuffledStress = stressQuestions.sort(() => Math.random() - 0.5);
+  for (let i = 0; i < 2 && shuffledStress.length > 0; i++) {
+    selectedQuestions.push(shuffledStress.pop());
   }
 
   return selectedQuestions;
