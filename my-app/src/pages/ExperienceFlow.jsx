@@ -1,16 +1,32 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { media } from '../components/mediaData';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getRandomizedQuestions } from '../components/getRandomizedQuestions';
 import api from "../api";
 import { ACCESS_TOKEN } from "../constants";
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
+import { FiChevronRight, FiCheck, FiX } from "react-icons/fi";
+import VideoGraphs from "../components/VideoGraphs";
+import Loading from "../components/Loading";
+
 
 // Constants
-const DURATION = 1; // seconds per slide
+const DURATION = 5; // seconds per slide
 const fadeVariant = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+};
+
+const slideVariants = {
+  hidden: { opacity: 0, x: -100 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: "easeOut" } },
+  exit: { opacity: 0, x: 100, transition: { duration: 0.3, ease: "easeIn" } },
+};
+
+const pulseAnimation = {
+  scale: [1, 1.05, 1],
+  transition: { duration: 2, repeat: Infinity },
 };
 
 // Separate SpeechToText hook
@@ -22,18 +38,27 @@ const useSpeechToText = ({ currentIndex, setResponses }) => {
     // Initialize speech recognition only once
     if (!recognitionRef.current) {
       recognitionRef.current = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognitionRef.current.continuous = false;
       recognitionRef.current.lang = "en-US";
-      recognitionRef.current.interimResults = false;
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
     }
 
     const recognition = recognitionRef.current;
 
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
+      let finalTranscript = "";
+      let interimTranscript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          finalTranscript += result[0].transcript + " ";
+        } else {
+          interimTranscript += result[0].transcript;
+        }
+      }
       setResponses((prevResponses) => ({
         ...prevResponses,
-        [currentIndex]: (prevResponses[currentIndex] || "") + " " + transcript,
+        [currentIndex]: finalTranscript + interimTranscript,
       }));
     };
 
@@ -43,7 +68,16 @@ const useSpeechToText = ({ currentIndex, setResponses }) => {
     };
 
     recognition.onend = () => {
-      setIsListening(false);
+      if (isListening) {
+        try {
+          recognition.start();
+        } catch (error) {
+          console.error("Error restarting recognition:", error);
+          setIsListening(false);
+        }
+      } else {
+        setIsListening(false);
+      }
     };
 
     return () => {
@@ -117,23 +151,22 @@ const useVideoRecording = () => {
     }
   }, []);
 
-  // In the useVideoRecording hook, modify the stopRecording function:
-const stopRecording = useCallback(() => {
-  if (mediaRecorderRef.current) {
-    mediaRecorderRef.current.stop();
-  }
-  
-  // Ensure we always clean up the stream
-  if (streamRef.current) {
-    streamRef.current.getTracks().forEach(track => {
-      track.stop();
-      console.log("Track stopped:", track.kind);
-    });
-    streamRef.current = null;
-  }
-  
-  setIsRecording(false);
-}, []);
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+    }
+    
+    // Ensure we always clean up the stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log("Track stopped:", track.kind);
+      });
+      streamRef.current = null;
+    }
+    
+    setIsRecording(false);
+  }, []);
 
   return { 
     isRecording, 
@@ -152,37 +185,72 @@ const WelcomeScreen = ({ onStart }) => (
     variants={fadeVariant}
     className="text-center space-y-6"
   >
-    <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">
+    <motion.h2 
+      className="text-3xl font-bold text-gray-800 mb-8 text-center"
+      animate={{ scale: [1, 1.05, 1], opacity: [0.9, 1, 0.9] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+    >
       Do you want to start to feel the experiences?
-    </h2>
-    <div className="flex justify-center">
-      <button
+    </motion.h2>
+    <motion.div 
+      className="flex justify-center"
+      whileHover={{ scale: 1.05 }}
+    >
+      <motion.button
         onClick={onStart}
-        className="px-8 py-4 bg-blue-500 text-white rounded-xl hover:bg-blue-600 shadow-md transition focus:outline-none focus:ring-2 focus:ring-blue-300 mb-12"
+        className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-xl transition focus:outline-none focus:ring-2 focus:ring-blue-300 mb-12"
+        whileTap={{ scale: 0.95 }}
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
       >
-        Start
-      </button>
-    </div>
+        Start Your Journey
+      </motion.button>
+    </motion.div>
   </motion.div>
 );
 
 // Instructions component
 const Instructions = () => (
-  <div className="mb-12 flex flex-col justify-center items-center text-white">
-    <div className="text-center mb-12">
-      <p className="text-xl text-gray-800">
+  <motion.div 
+    className="mb-12 flex flex-col justify-center items-center text-white"
+    initial={{ opacity: 0, y: 30 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.7, delay: 0.2 }}
+  >
+    <motion.div className="text-center mb-12">
+      <motion.p 
+        className="text-xl text-gray-800"
+        animate={{ 
+          textShadow: ["0px 0px 0px rgba(0,0,0,0)", "0px 0px 5px rgba(72,187,120,0.5)", "0px 0px 0px rgba(0,0,0,0)"]
+        }}
+        transition={{ duration: 3, repeat: Infinity }}
+      >
         For Better{" "}
         <span className="text-green-600 font-semibold">
           Experience
         </span>
         , please make sure that:
-      </p>
-    </div>
+      </motion.p>
+    </motion.div>
 
-    <div className="flex flex-col md:flex-row gap-6">
+    <div className="flex flex-col md:flex-row gap-6 flex-wrap justify-center">
       {/* Box 1 */}
-      <div className="bg-white bg-opacity-30 backdrop-blur-md border border-purple-400 rounded-lg p-6 w-64 text-center hover:scale-105 transition-transform duration-300">
-        <div className="mb-4">
+      <motion.div 
+        className="bg-white bg-opacity-30 backdrop-blur-md border border-purple-400 rounded-lg p-6 w-64 text-center hover:scale-105 transition-transform duration-300"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        whileHover={{ 
+          boxShadow: "0px 10px 20px rgba(120, 58, 180, 0.3)",
+          borderColor: "#a78bfa"
+        }}
+      >
+        <motion.div 
+          className="mb-4"
+          animate={{ rotate: [0, 5, -5, 0] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        >
           <svg
             className="mx-auto h-12 w-12 text-green-500"
             fill="none"
@@ -201,18 +269,31 @@ const Instructions = () => (
               strokeLinejoin="round"
             />
           </svg>
-        </div>
+        </motion.div>
         <p className="text-gray-800">
           Your camera is located{" "}
           <span className="text-green-600 font-semibold">
             on the top of your screen
           </span>
         </p>
-      </div>
+      </motion.div>
 
       {/* Box 2 */}
-      <div className="bg-white bg-opacity-30 backdrop-blur-md border border-purple-400 rounded-lg p-6 w-64 text-center hover:scale-105 transition-transform duration-300">
-        <div className="mb-4">
+      <motion.div 
+        className="bg-white bg-opacity-30 backdrop-blur-md border border-purple-400 rounded-lg p-6 w-64 text-center hover:scale-105 transition-transform duration-300"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        whileHover={{ 
+          boxShadow: "0px 10px 20px rgba(120, 58, 180, 0.3)",
+          borderColor: "#a78bfa"
+        }}
+      >
+        <motion.div 
+          className="mb-4"
+          animate={{ rotate: [0, 5, -5, 0] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        >
           <svg
             className="mx-auto h-12 w-12 text-green-500"
             fill="none"
@@ -226,16 +307,29 @@ const Instructions = () => (
               strokeLinejoin="round"
             />
           </svg>
-        </div>
+        </motion.div>
         <p className="text-gray-800">
           You are{" "}
           <span className="text-green-600 font-semibold">facing</span> the camera
         </p>
-      </div>
+      </motion.div>
 
       {/* Box 3 */}
-      <div className="bg-white bg-opacity-30 backdrop-blur-md border border-purple-400 rounded-lg p-6 w-64 text-center hover:scale-105 transition-transform duration-300">
-        <div className="mb-4">
+      <motion.div 
+        className="bg-white bg-opacity-30 backdrop-blur-md border border-purple-400 rounded-lg p-6 w-64 text-center hover:scale-105 transition-transform duration-300"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.7 }}
+        whileHover={{ 
+          boxShadow: "0px 10px 20px rgba(120, 58, 180, 0.3)",
+          borderColor: "#a78bfa"
+        }}
+      >
+        <motion.div 
+          className="mb-4"
+          animate={{ rotate: [0, 5, -5, 0] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        >
           <svg
             className="mx-auto h-12 w-12 text-green-500"
             fill="none"
@@ -249,16 +343,29 @@ const Instructions = () => (
               strokeLinejoin="round"
             />
           </svg>
-        </div>
+        </motion.div>
         <p className="text-gray-800">
           You are in a{" "}
           <span className="text-green-600 font-semibold">well-lit room</span>
         </p>
-      </div>
+      </motion.div>
       
       {/* Box 4 */}
-      <div className="bg-white bg-opacity-30 backdrop-blur-md border border-purple-400 rounded-lg p-6 w-64 text-center hover:scale-105 transition-transform duration-300">
-        <div className="mb-4">
+      <motion.div 
+        className="bg-white bg-opacity-30 backdrop-blur-md border border-purple-400 rounded-lg p-6 w-64 text-center hover:scale-105 transition-transform duration-300"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.9 }}
+        whileHover={{ 
+          boxShadow: "0px 10px 20px rgba(120, 58, 180, 0.3)",
+          borderColor: "#a78bfa"
+        }}
+      >
+        <motion.div 
+          className="mb-4"
+          animate={{ rotate: [0, 5, -5, 0] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        >
           <svg
             className="mx-auto h-12 w-12 text-green-500"
             fill="none"
@@ -272,16 +379,29 @@ const Instructions = () => (
               d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z"
             />
           </svg>
-        </div>
+        </motion.div>
         <p className="text-gray-800">
           Be {" "}
           <span className="text-green-600 font-semibold">Genuine</span> {" "} to yourself
         </p>
-      </div>
+      </motion.div>
       
       {/* Box 5 */}
-      <div className="bg-white bg-opacity-30 backdrop-blur-md border border-purple-400 rounded-lg p-6 w-64 text-center hover:scale-105 transition-transform duration-300">
-        <div className="mb-4">
+      <motion.div 
+        className="bg-white bg-opacity-30 backdrop-blur-md border border-purple-400 rounded-lg p-6 w-64 text-center hover:scale-105 transition-transform duration-300"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 1.1 }}
+        whileHover={{ 
+          boxShadow: "0px 10px 20px rgba(120, 58, 180, 0.3)",
+          borderColor: "#a78bfa"
+        }}
+      >
+        <motion.div 
+          className="mb-4"
+          animate={{ rotate: [0, 5, -5, 0] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        >
           <svg
             className="mx-auto h-12 w-12 text-green-500"
             fill="none"
@@ -300,91 +420,16 @@ const Instructions = () => (
               d="M9 12l2 2 4-4"
             />
           </svg>
-        </div>
+        </motion.div>
         <p className="text-gray-800">
           Images and Videos used {" "}
           <span className="text-green-600 font-semibold">are not for</span> {" "} harming your feeling
         </p>
-      </div>
+      </motion.div>
     </div>
-  </div>
+  </motion.div>
 );
 
-// Results component
-const Results = ({ results }) => (
-  <div className="text-center mt-8 p-6 bg-white shadow-lg rounded-xl">
-    <h2 className="text-2xl font-semibold text-gray-800">Test Results</h2>
-    <p className="text-lg text-gray-600 mt-2">
-      Congratulations! Your experience is complete.
-    </p>
-
-    {/* Video Predictions */}
-    <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-      <p className="text-lg font-semibold text-gray-700">Video Analysis</p>
-      {results.video_prediction && results.video_prediction.error ? (
-        <p className="text-red-500">{results.video_prediction.error}</p>
-      ) : (
-        <ul>
-          {results.video_prediction &&
-            Object.entries(results.video_prediction).map(([key, value]) => (
-              <li key={key} className="flex justify-between text-lg">
-                <span className="capitalize font-medium text-gray-700">{key}:</span>
-                <span className="font-bold text-blue-600">
-                  {typeof value === "number" ? (value * 100).toFixed(1) + "%" : "N/A"}
-                </span>
-              </li>
-            ))}
-        </ul>
-      )}
-    </div>
-
-    <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-  <p className="text-lg font-semibold text-gray-700">Text Analysis</p>
-  {results.text_predictions && results.text_predictions.length > 0 ? (
-    results.text_predictions.map((item) => (
-      <div key={item.text_index} className="mt-2 p-2 bg-white shadow rounded-lg">
-        <p className="text-gray-700">
-          <strong>Transcript:</strong> {item.transcript}
-        </p>
-        {item.text_prediction ? (
-          <ul className="mt-2">
-            {Object.entries(item.text_prediction).map(([key, value]) => (
-              <li key={key} className="flex justify-between text-lg">
-                <span className="capitalize font-medium text-gray-700">{key}:</span>
-                <span className="font-bold text-blue-600">
-                  {typeof value === "number" ? value.toFixed(2) + "%" : "N/A"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-gray-500">No mental health scores available.</p>
-        )}
-      </div>
-    ))
-  ) : (
-    <p className="text-gray-500">No text predictions available.</p>
-  )}
-</div>
-
-
-    {/* Final Scores */}
-    <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-      <p className="text-lg font-semibold text-gray-700">Final Scores</p>
-      <ul>
-        {results.final_scores &&
-          Object.entries(results.final_scores).map(([key, value]) => (
-            <li key={key} className="flex justify-between text-lg">
-              <span className="capitalize font-medium text-gray-700">{key}:</span>
-              <span className="font-bold text-blue-600">
-                {typeof value === "number" ? value.toFixed(2) + "%" : "N/A"}
-              </span>
-            </li>
-          ))}
-      </ul>
-    </div>
-  </div>
-);
 
 // Main component
 const ExperienceFlow = () => {
@@ -399,6 +444,12 @@ const ExperienceFlow = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [testCompleted, setTestCompleted] = useState(false);
+        const [searchParams] = useSearchParams();
+  const email = searchParams.get('email');
+  const fromComponent = searchParams.get('fromComponent');
+    const [isLoading, setIsLoading] = useState(false);
+  
+
 
   const streamRef = useRef(null);
 
@@ -431,10 +482,13 @@ const ExperienceFlow = () => {
       alert(responses);
       return;
     }
+    setIsLoading(true); // Set loading to true when submitting
+
 
     const formData = new FormData();
     formData.append("video", videoBlob, "video.webm");
     formData.append("responses", JSON.stringify(responses));
+    formData.append('email', email);
 
     try {
       const response = await api.post("/video/predict_emotion/", formData, {
@@ -443,12 +497,12 @@ const ExperienceFlow = () => {
           "Content-Type": "multipart/form-data",
         },
       });
-
       setResults(response.data);
       setMessage({ type: "success", text: "Prediction successful!" });
     } catch (error) {
       console.error("Prediction error:", error);
       setMessage({ type: "error", text: "Something went wrong!" });
+      setIsLoading(false); // Reset loading state on error
     } finally {
       setLoading(false);
     }
@@ -465,37 +519,22 @@ const ExperienceFlow = () => {
     startRecording();
   }, [startRecording]);
 
-  // Handle next question
-  const handleNext = useCallback(() => {
-    if (!responses[currentIndex] || responses[currentIndex].trim() === '') {
-      alert('Please enter a response before proceeding!');
-      return;
-    }
-
-    if (currentIndex < mediaList.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setShowQuestion(false);
-    } else {
-      handleEnd();
-    }
-  }, [currentIndex, mediaList.length, responses]);
-
-  // End the experience
-  const handleEnd = useCallback(() => {
+   // End the experience
+   const handleEnd = useCallback(() => {
     console.log('User Responses:', responses);
-    alert('Thank you for your time!');
     
-    // Ensure recording stops and tracks are cleaned up
+    if (isListening) {
+      stopListening();
+    }
+    
     stopRecording();
     setStarted(false);
     setTestCompleted(true);
     
-    // Process the video data
     if (videoBlob && responses) {
       handlePredict(videoBlob, responses);
     }
     
-    // Reset video state
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
@@ -504,7 +543,26 @@ const ExperienceFlow = () => {
       setStarted(false);
       setTestCompleted(true);
     }, 1000);
-  }, [responses, stopRecording, videoBlob, handlePredict]);
+  }, [responses, stopListening, stopRecording, videoBlob, handlePredict]);
+
+  // Handle next question
+  const handleNext = useCallback(() => {
+    if (!responses[currentIndex] || responses[currentIndex].trim() === '') {
+      alert('Please enter a response before proceeding!');
+      return;
+    }
+  
+    if (isListening) {
+      stopListening();
+    }
+  
+    if (currentIndex < mediaList.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setShowQuestion(false);
+    } else {
+      handleEnd();
+    }
+  }, [currentIndex, mediaList.length, responses, isListening, stopListening, handleEnd]);
 
   // Progress timer effect
   useEffect(() => {
@@ -539,37 +597,79 @@ const ExperienceFlow = () => {
     };
   }, [stopRecording]);
 
-  // Add this at the component level
-useEffect(() => {
-  return () => {
-    // Final cleanup when component unmounts
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => {
-        track.stop();
-        console.log("Component unmount: Track stopped:", track.kind);
-      });
-      streamRef.current = null;
+  // Component unmount cleanup
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => {
+          track.stop();
+          console.log("Component unmount: Track stopped:", track.kind);
+        });
+        streamRef.current = null;
+      }
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, []);
+
+  // Test completion cleanup
+  useEffect(() => {
+    if (testCompleted) {
+      stopRecording();
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
     }
-    
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
+  }, [testCompleted, stopRecording]);
+
+    // If results exist, render the Graphs component instead of the recording UI.
+    if (results) {
+      return <VideoGraphs results={results}  email={email} fromComponent={fromComponent}/>;
     }
-  };
-}, []);
-useEffect(() => {
-  // When test completes, make sure camera is off
-  if (testCompleted) {
-    stopRecording();
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  }
-}, [testCompleted, stopRecording]);
+            // Add this right after the above if statement
+if (isLoading) {
+  return <Loading />;
+}
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-purple-300 to-blue-300 p-4">
-      {/* Welcome Screen */}
-      {!userType && !started && (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-purple-300 via-indigo-200 to-blue-300 p-4 overflow-hidden">
+      {/* Animated background elements */}
+      <motion.div 
+        className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.6 }}
+        transition={{ duration: 1.5 }}
+      >
+        <motion.div 
+          className="absolute top-20 left-20 w-32 h-32 rounded-full bg-pink-300 filter blur-xl"
+          animate={{ 
+            x: [0, 100, 0],
+            y: [0, 50, 0]
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute bottom-20 right-20 w-40 h-40 rounded-full bg-blue-300 filter blur-xl"
+          animate={{ 
+            x: [0, -80, 0],
+            y: [0, 40, 0]
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute top-1/2 left-1/2 w-48 h-48 rounded-full bg-purple-200 filter blur-xl"
+          animate={{ 
+            x: [0, -40, 0],
+            y: [0, -60, 0]
+          }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.div>
+
+            {/* Welcome Screen */}
+            {!userType && !started && (
         <>
           <WelcomeScreen onStart={handleStart} />
           <Instructions />
@@ -580,9 +680,10 @@ useEffect(() => {
       {started && mediaList.length > 0 && (
         <motion.div
           key={currentIndex}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          variants={slideVariants}
           className="w-full max-w-3xl mt-10 space-y-6"
         >
           <h3 className="text-lg text-gray-600 text-center">
@@ -715,7 +816,7 @@ useEffect(() => {
 
       {/* Results Display */}
       {testCompleted && results && Object.keys(results).length > 0 && (
-        <Results results={results} />
+        <VideoGraphs results={results} email={email} />
       )}
     </div>
   );

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 
 // Data arrays for various categories
 const onlineGames = [
@@ -111,14 +111,56 @@ const youtube = [
     },
 ];
 
-// Animated quote component for inspiration
+// Enhanced animated background component with floating particles
+const AnimatedBackground = () => {
+  const particles = Array.from({ length: 15 }, (_, i) => ({
+    id: i,
+    size: Math.random() * 6 + 3,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    duration: Math.random() * 20 + 15,
+    delay: Math.random() * 5,
+  }));
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map(particle => (
+        <motion.div
+          key={particle.id}
+          className="absolute rounded-full bg-white opacity-30"
+          style={{
+            width: particle.size,
+            height: particle.size,
+            left: `${particle.x}%`,
+            top: `${particle.y}%`,
+          }}
+          animate={{
+            y: [0, -150, 0],
+            x: [0, Math.random() * 50 - 25, 0],
+            opacity: [0.3, 0.7, 0.3],
+          }}
+          transition={{
+            duration: particle.duration,
+            repeat: Infinity,
+            delay: particle.delay,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// Enhanced Quote component with 3D effect and smooth transitions
 const InspirationQuote = () => {
   const quotes = [
     "Breathe. Let go. And remind yourself that this very moment is the only one you know you have for sure.",
     "Your mind will answer most questions if you learn to relax and wait for the answer.",
     "The greatest weapon against stress is our ability to choose one thought over another.",
     "Within you, there is a stillness and a sanctuary to which you can retreat at any time.",
-    "Sometimes the most productive thing you can do is relax."
+    "Sometimes the most productive thing you can do is relax.",
+    "Peace comes from within. Do not seek it without.",
+    "Your calm mind is the ultimate weapon against your challenges.",
   ];
   
   const [currentQuote, setCurrentQuote] = useState(0);
@@ -131,104 +173,407 @@ const InspirationQuote = () => {
   }, []);
   
   return (
-    <div className="w-full flex justify-center my-8">
+    <div className="w-full flex justify-center my-8 perspective-1000">
       <AnimatePresence mode="wait">
         <motion.div 
           key={currentQuote}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 1 }}
-          className="text-center max-w p-4 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 shadow-inner"
+          initial={{ opacity: 0, y: 20, rotateX: 30 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          exit={{ opacity: 0, y: -20, rotateX: -30 }}
+          transition={{ duration: 1.2, type: "spring" }}
+          className="text-center max-w-xl p-8 rounded-xl bg-gradient-to-r from-blue-500/30 to-purple-500/30 shadow-inner backdrop-blur-sm"
+          style={{
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.3)",
+          }}
         >
-          <p className="text-xl italic text-white-700">"{quotes[currentQuote]}"</p>
+          <motion.p 
+            className="text-2xl italic text-white font-light"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.8 }}
+          >
+            "{quotes[currentQuote]}"
+          </motion.p>
+          <motion.div 
+            className="h-1 w-16 bg-white/50 mx-auto mt-6 rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: 64 }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+          />
         </motion.div>
       </AnimatePresence>
     </div>
   );
 };
 
-// Colorful Card Component with enhanced hover effects
-const Card = ({ title, description, link, image, gradient }) => (
+
+const Card = ({ title, description, link, image, gradient, index }) => {
+  const cardRef = useRef(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [hovered, setHovered] = useState(false);
+
+  const handleMouseMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setMousePosition({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  // Calculate rotation based on mouse position
+  const rotateY = hovered ? (mousePosition.x / 150 - 1) * 10 : 0;
+  const rotateX = hovered ? ((mousePosition.y / 150 - 1) * -10) : 0;
+
+  return (
     <motion.div
-      whileHover={{ 
-        scale: 1.05,
-        boxShadow: "0px 15px 25px rgba(0, 0, 0, 0.2)"
+      ref={cardRef}
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.6, delay: index * 0.15 }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        perspective: "1000px",
+        transformStyle: "preserve-3d",
       }}
-      whileTap={{ scale: 0.95 }}
-      className={`relative flex flex-col justify-between bg-gradient-to-r ${gradient} p-5 shadow-lg rounded-2xl text-white w-80 h-96 overflow-hidden`}
+      className="relative w-80 h-96"
     >
-      <div className="absolute top-0 left-0 w-full h-full bg-black opacity-20 rounded-2xl z-0"></div>
-      <img 
-        src={image} 
-        alt={title} 
-        className="w-full h-44 object-cover rounded-lg mb-4 relative z-10 shadow-md transform transition-transform duration-500 hover:scale-105" 
-      />
-      <div className="relative z-10 flex-grow">
-        <h3 className="text-xl font-bold mb-2">{title}</h3>
-        <p className="text-sm opacity-90 mb-8">{description}</p>
-      </div>
-      <button
-        onClick={() => window.open(link, "_blank")}
-        className="bg-white text-blue-600 font-bold py-2 px-4 rounded-lg hover:bg-blue-100 transition duration-300 w-11/12 absolute bottom-5 left-1/2 transform -translate-x-1/2 shadow-md z-10"
+      <motion.div
+        style={{
+          rotateX: rotateX,
+          rotateY: rotateY,
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className={`absolute inset-0 flex flex-col justify-between bg-gradient-to-r ${gradient} p-5 shadow-lg rounded-2xl text-white overflow-hidden`}
       >
-        Explore Now
-      </button>
+        {/* Background gradient overlay with animation */}
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-tr from-black/40 to-transparent" 
+          animate={{ opacity: hovered ? 0.6 : 0.35 }}
+        />
+        
+        {/* Sparkle effect when hovered */}
+        {hovered && (
+          <div className="absolute inset-0 overflow-hidden">
+            {[...Array(5)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 bg-white rounded-full"
+                initial={{ 
+                  x: mousePosition.x, 
+                  y: mousePosition.y, 
+                  opacity: 0.8, 
+                  scale: 0 
+                }}
+                animate={{ 
+                  x: mousePosition.x + (Math.random() - 0.5) * 100, 
+                  y: mousePosition.y + (Math.random() - 0.5) * 100,
+                  opacity: 0,
+                  scale: 3
+                }}
+                transition={{ duration: 1 }}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Card content */}
+        <motion.div
+          animate={{ scale: hovered ? 1.05 : 1 }}
+          transition={{ duration: 0.3 }}
+          className="relative z-10"
+        >
+          <div className="overflow-hidden rounded-lg shadow-md mb-4">
+            <motion.img 
+              src={image} 
+              alt={title}
+              className="w-full h-44 object-cover" 
+              whileHover={{ scale: 1.15 }}
+              transition={{ duration: 0.8 }}
+            />
+          </div>
+        </motion.div>
+
+        <div className="relative z-10 flex-grow">
+          <h3 className="text-xl font-bold mb-2">{title}</h3>
+          <p className="text-sm opacity-90 mb-8">{description}</p>
+        </div>
+
+        {/* Button wrapper to preserve centered positioning */}
+        <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 w-11/12 z-10">
+          <motion.button
+            whileHover={{ scale: 1.05, y: -3 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => window.open(link, "_blank")}
+            className="bg-white text-blue-600 font-bold py-2 px-4 rounded-lg transition duration-300 shadow-md w-full"
+          >
+            Explore Now
+          </motion.button>
+        </div>
+      </motion.div>
     </motion.div>
   );
+};
 
-// Animated section header
-const SectionHeader = ({ title }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 30 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.8 }}
-    className="text-center mb-8"
-  >
-    <h2 className="text-4xl font-bold inline-block relative">
-      {title}
-      <motion.div
-        initial={{ width: 0 }}
-        whileInView={{ width: "100%" }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.5, duration: 1 }}
-        className="h-1 bg-gradient-to-r from-blue-500 to-purple-500 mt-2"
-      ></motion.div>
-    </h2>
-  </motion.div>
-);
 
-// Reusable component for each recommendation category with animation
-const RecommendationSection = ({ title, items, gradients }) => {
+// Enhanced section header with elegant animation
+const SectionHeader = ({ title }) => {
+  const { scrollYProgress } = useScroll();
+  const opacity = useTransform(scrollYProgress, [0, 0.3], [0, 1]);
+  
   return (
-    <section className="my-16 relative">
-      <SectionHeader title={title} />
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.8 }}
+      className="text-center mb-16 relative"
+    >
+      <motion.div 
+        className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 w-32 h-32 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 blur-xl"
+        animate={{ 
+          scale: [1, 1.2, 1],
+          opacity: [0.3, 0.5, 0.3]
+        }}
+        transition={{ duration: 6, repeat: Infinity }}
+      />
       
-      <div className="flex flex-wrap justify-center gap-8">
-        {items.map((item, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 50 }}
+      <h2 className="text-4xl font-bold inline-block relative z-10">
+        {title.split('').map((char, i) => (
+          <motion.span
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
+            transition={{ duration: 0.5, delay: 0.05 * i }}
+            className="inline-block"
           >
-            <Card
-              title={item.title}
-              description={item.description}
-              link={item.link}
-              image={item.image}
-              gradient={gradients[index % gradients.length]}
-            />
-          </motion.div>
+            {char}
+          </motion.span>
         ))}
-      </div>
+        <motion.div
+          initial={{ width: 0 }}
+          whileInView={{ width: "100%" }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5, duration: 1 }}
+          className="h-1 bg-gradient-to-r from-blue-500 to-purple-500 mt-2"
+        ></motion.div>
+      </h2>
+    </motion.div>
+  );
+};
+
+// Enhanced recommendation section with staggered animations
+const RecommendationSection = ({ title, items, gradients }) => {
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  return (
+    <section className="my-24 relative">
+      <SectionHeader title={title} />
+      
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: "-100px" }}
+        className="flex flex-wrap justify-center gap-8"
+      >
+        {items.map((item, index) => (
+          <Card
+            key={index}
+            title={item.title}
+            description={item.description}
+            link={item.link}
+            image={item.image}
+            gradient={gradients[index % gradients.length]}
+            index={index}
+          />
+        ))}
+      </motion.div>
+      
+      {/* Add decorative elements for visual interest */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.5 }}
+        className="absolute -z-10 top-1/2 right-0 w-64 h-64 rounded-full bg-purple-500/5 blur-3xl"
+      />
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.5 }}
+        className="absolute -z-10 bottom-0 left-10 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl"
+      />
     </section>
   );
 };
 
-// Main Component
+const BreathingCircle = () => {
+  const [isBreathing, setIsBreathing] = useState(false);
+  const [instruction, setInstruction] = useState("");
+  const intervalRef = useRef(null);
+  const startTimeRef = useRef(null);
+
+  useEffect(() => {
+    if (isBreathing) {
+      // Start the cycle
+      startTimeRef.current = Date.now();
+      intervalRef.current = setInterval(() => {
+        const elapsed = Date.now() - startTimeRef.current;
+        const cycleTime = elapsed % 8000; // 8-second cycle
+
+        if (cycleTime < 3200) {
+          setInstruction("Inhale..."); // 0s to 3.2s
+        } else if (cycleTime < 5600) {
+          setInstruction("Hold...");   // 3.2s to 5.6s
+        } else {
+          setInstruction("Exhale...");   // 5.6s to 8s
+        }
+      }, 100);
+    } else {
+      // Stop the cycle and reset instruction
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setInstruction("");
+    }
+
+    return () => clearInterval(intervalRef.current);
+  }, [isBreathing]);
+
+  // Define animation variants for the background and border
+  const circleVariants = {
+    breathing: {
+      scale: [1, 1.5, 1.5, 1],
+      opacity: [0.7, 0.9, 0.9, 0.7],
+      transition: { duration: 8, repeat: Infinity, times: [0, 0.4, 0.7, 1] },
+    },
+    paused: {
+      scale: 1,
+      opacity: 0.7,
+      transition: { duration: 0.5 },
+    },
+  };
+
+  const borderVariants = {
+    breathing: {
+      scale: [1, 1.4, 1.4, 1],
+      transition: { duration: 8, repeat: Infinity, times: [0, 0.4, 0.7, 1] },
+    },
+    paused: {
+      scale: 1,
+      transition: { duration: 0.5 },
+    },
+  };
+
+  return (
+    <div className="my-20 flex flex-col items-center ">
+      <button
+        onClick={() => setIsBreathing(!isBreathing)}
+        className="mb-20 bg-white/20 backdrop-blur px-6 py-3 rounded-full text-white font-medium hover:bg-white/30 transition-all"
+      >
+        {isBreathing ? "Pause Breathing Exercise" : "Start Breathing Exercise"}
+      </button>
+      
+      <div className="relative w-48 h-48 flex items-center justify-center">
+        <motion.div
+          animate={isBreathing ? "breathing" : "paused"}
+          variants={circleVariants}
+          className="absolute w-full h-full rounded-full bg-gradient-to-r from-blue-400 to-purple-400 blur-md"
+        />
+        
+        <motion.div
+          animate={isBreathing ? "breathing" : "paused"}
+          variants={borderVariants}
+          className="absolute w-full h-full rounded-full border-2 border-white/50"
+        />
+        
+        {isBreathing && (
+          <p className="text-white text-xl font-black">{instruction}</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Enhanced Hero component with parallax effect
+const Hero = () => {
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 1], [0, 300]);
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 1.5 }}
+      className="w-full py-32 bg-gradient-to-r from-blue-600/90 to-purple-600/90 text-white text-center relative overflow-hidden"
+    >
+      {/* Animated background */}
+      <AnimatedBackground />
+      
+      {/* Parallax floating elements */}
+      <motion.div
+        style={{ y }}
+        className="absolute top-20 left-20 w-32 h-32 rounded-full bg-white/5 blur-2xl"
+      />
+      <motion.div
+        style={{ y: useTransform(scrollYProgress, [0, 1], [0, 200]) }}
+        className="absolute bottom-10 right-10 w-64 h-64 rounded-full bg-purple-500/10 blur-3xl"
+      />
+      
+      {/* Hero content */}
+      <div className="container mx-auto">
+        <motion.h1
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 1, delay: 0.3 }}
+          className="text-5xl md:text-6xl font-bold mb-6"
+        >
+          Find Your <span className="relative">
+            Peace
+            <motion.span
+              className="absolute -bottom-2 left-0 w-full h-1 bg-white/70"
+              initial={{ width: 0 }}
+              animate={{ width: "100%" }}
+              transition={{ delay: 1.3, duration: 1 }}
+            />
+          </span>
+        </motion.h1>
+        
+        <motion.p
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 1, delay: 0.6 }}
+          className="text-xl max-w-2xl mx-auto mb-12 text-white/90"
+        >
+          Explore resources designed to bring calm and clarity to your everyday life
+        </motion.p>
+        
+        {/* Breathing exercise */}
+        <BreathingCircle />
+        
+        {/* Inspirational Quote */}
+        <InspirationQuote />
+      </div>
+    </motion.div>
+  );
+};
+
+// Main Component with enhanced visual elements and performance optimizations
 const StressReliefRecommendations = () => {
   // Define enhanced gradients for different categories
   const gradients = [
@@ -236,55 +581,75 @@ const StressReliefRecommendations = () => {
     "from-blue-600 to-cyan-500",
     "from-rose-500 to-orange-500",
     "from-emerald-500 to-teal-600",
+    "from-violet-600 to-fuchsia-600",
+    "from-amber-500 to-orange-400",
+    "from-sky-500 to-cyan-400",
   ];
 
+  // Scroll to top button
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollButton(window.scrollY > 500);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
-      {/* Hero Section */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        className="w-full py-16 bg-gradient-to-r from-blue-600/90 to-purple-600/90 text-white text-center relative overflow-hidden"
-      >
-        {/* Animated background patterns */}
+    <div className="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 min-h-screen text-white">
+      {/* Enhanced Hero Section */}
+      <Hero />
+      
+      <div className="container mx-auto px-6 py-12 relative">
+        {/* Progress indicator */}
         <motion.div 
-          animate={{ 
-            rotate: 360,
-            scale: [1, 1.2, 1],
-          }} 
-          transition={{ 
-            duration: 20,
-            repeat: Infinity,
-            repeatType: "loop"
-          }}
-          className="absolute top-0 left-0 w-full h-full opacity-10"
-          style={{
-            backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
-            backgroundSize: "30px 30px"
+          className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-purple-500 origin-left z-50"
+          style={{ 
+            scaleX: useScroll().scrollYProgress 
           }}
         />
         
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-          className="mt-8"
-        >
-             {/* Inspirational Quote */}
-      <InspirationQuote />
-        </motion.div>
-      </motion.div>
-      
-     
-      
-      <div className="container mx-auto px-6 py-8">
-        {/* Recommendation Sections */}
+        {/* Recommendation Sections with enhanced spacing */}
         <RecommendationSection title="Playful Escapes" items={onlineGames} gradients={gradients} />
         <RecommendationSection title="Wisdom & Practices" items={articles} gradients={gradients} /> 
         <RecommendationSection title="Mindful Moments" items={mindfulness} gradients={gradients} />
         <RecommendationSection title="Visual Inspiration" items={youtube} gradients={gradients} />
         
+        {/* Footer with contact form */}
+        <motion.footer 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1 }}
+          className="mt-24 py-12 border-t border-white/10 text-center"
+        >
+          <p className="text-white/70">© {new Date().getFullYear()} Mental Health Resources</p>
+          <p className="text-white/50 mt-2">Your journey to wellbeing starts with a single breath</p>
+        </motion.footer>
+        
+        {/* Scroll to top button */}
+        <AnimatePresence>
+          {showScrollButton && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              onClick={scrollToTop}
+              className="fixed bottom-8 right-8 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-colors z-50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

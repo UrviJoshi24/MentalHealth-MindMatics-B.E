@@ -123,9 +123,8 @@ from django.core.files.storage import default_storage
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from gradio_client import Client, handle_file
-# from userauth.models import User
-# from .models import EmotionResult
-
+from .models import VideoResult
+from userauth.models import User
 # Initialize Hugging Face clients
 VIDEO_ANALYSIS_SPACE = "UrviJoshi/Video-based-emotion-detection"
 TEXT_ANALYSIS_SPACE = "Karanjain09/Text_Analysis"
@@ -144,15 +143,18 @@ def predict_emotion(request):
     if 'video' in request.FILES:
         video_file = request.FILES['video']
         file_path = default_storage.save(f"uploads/{video_file.name}", video_file)
+        full_path = os.path.join(settings.MEDIA_ROOT, file_path)
         print("Video file saved at:", file_path)
+        print("Full path:", full_path)
         
         try:
             # Process video with Gradio API
             result = video_client.predict(
-                video={"video": handle_file(file_path)},
+                video={"video": handle_file(full_path)},
                 api_name="/predict"
             )
             # Extract mental health scores from video analysis
+            print(result)
             video_prediction = result[2]  # JSON data with mental health scores
             
             # Delete the uploaded file after processing
@@ -230,15 +232,15 @@ def predict_emotion(request):
             "transcript": transcript_text  # Include the transcript for debugging
         })
     
-    # # 3. Get user email and verify user exists
-    # email = request.POST.get('email')
-    # if not email:
-    #     return JsonResponse({"message": "Email is required."}, status=400)
-        
-    # try:
-    #     user = User.objects.get(email=email)
-    # except User.DoesNotExist:
-    #     return JsonResponse({"message": "User not found."}, status=404)
+    # Retrieve the email from the request data
+    email = request.POST.get('email')
+    if not email:
+        return JsonResponse({"message": "Email is required."}, status=400)
+
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return JsonResponse({"message": "User not found."}, status=404)
     
     # 4. Calculate final mental health scores by combining video and text results
     # Initialize counters for text scores
@@ -263,10 +265,14 @@ def predict_emotion(request):
         if stress_text is not None:
             total_stress_text += float(stress_text)
     
-    # Get video scores
     depression_video = float(video_prediction.get("depression", 0.0))
-    anxiety_video = float(video_prediction.get("anxiety", 0.0))
+    anxiety_video = float(video_prediction.get("anxiety", 0.0)) 
     stress_video = float(video_prediction.get("stress", 0.0))
+
+    # depression_video = depression_video_s * 100
+    # anxiety_video = anxiety_video_s * 100
+    # stress_video = stress_video_s * 100
+
     
     # Average text scores
     avg_depression_text = total_depression_text / valid_text_count if valid_text_count > 0 else 0.0
@@ -298,17 +304,15 @@ def predict_emotion(request):
         final_anxiety = 0.0
         final_stress = 0.0
     
-    # # 5. Save the computed results in the database
-    # EmotionResult.objects.create(
-    #     user=user,
-    #     time_stamp=timezone.now(),
-    #     email=email,
-    #     depression=final_depression,
-    #     anxiety=final_anxiety,
-    #     stress=final_stress,
-    #     has_video=has_video,
-    #     has_text=has_text
-    # )
+    # Save the computed results in the database
+    VideoResult.objects.create(
+        user=user,
+        time_stamp=timezone.now(),
+        email=email,
+        depression=final_depression,
+        anxiety=final_anxiety,
+        stress=final_stress
+    )
     
     # 6. Prepare and return response
     response_data = {
