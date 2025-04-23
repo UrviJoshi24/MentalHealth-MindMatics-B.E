@@ -126,8 +126,8 @@ from gradio_client import Client, handle_file
 from .models import VideoResult
 from userauth.models import User
 # Initialize Hugging Face clients
-VIDEO_ANALYSIS_SPACE = "UrviJoshi/Video-based-emotion-detection"
-TEXT_ANALYSIS_SPACE = "Karanjain09/Text_Analysis"
+VIDEO_ANALYSIS_SPACE = "Karanjain2003/Video-based-emotion-detection"
+TEXT_ANALYSIS_SPACE = "Karanjain2003/Text_Analysis"
 video_client = Client(VIDEO_ANALYSIS_SPACE)
 text_client = Client(TEXT_ANALYSIS_SPACE)
 

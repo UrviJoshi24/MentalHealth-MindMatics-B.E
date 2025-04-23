@@ -33,9 +33,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     "http://localhost:3000",
+# ]
 
 # Django REST Framework settings
 REST_FRAMEWORK = {
@@ -55,7 +55,7 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     # Specifies how long the access token will remain valid.
     # In this case, the access token will expire after 30 minutes.
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),  # Access token valid for 30 minutes
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=2),  # Access token valid for 30 minutes
 
     # Specifies how long the refresh token will remain valid.
     # In this case, the refresh token will expire after 1 day.
@@ -101,9 +101,9 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
 
 # Allow requests from your frontend
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Your React development server
-]
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",  # Your React development server
+# ]
 
 ROOT_URLCONF = 'Mind_Matrics.urls'
 

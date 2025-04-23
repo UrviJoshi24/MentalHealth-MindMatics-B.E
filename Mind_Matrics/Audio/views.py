@@ -53,8 +53,8 @@ def report_generate(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 # Initialize Hugging Face clients
-MENTAL_HEALTH_SPACE = "Karanjain09/Mental_health_prediction"
-TEXT_ANALYSIS_SPACE = "Karanjain09/Text_Analysis"
+MENTAL_HEALTH_SPACE = "Karanjain2003/Mental_health_prediction"
+TEXT_ANALYSIS_SPACE = "Karanjain2003/Text_Analysis"
 
 audio_client = Client(MENTAL_HEALTH_SPACE)
 text_client = Client(TEXT_ANALYSIS_SPACE)

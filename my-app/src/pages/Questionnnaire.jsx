@@ -586,6 +586,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from 'react-router-dom';
 import api from "../api";
+import SessionTimeout from '../components/SessionTimeout';
 
 // Import question images and videos (replace with your actual file paths)
 import question1 from '../assets/images/Q_1.jpg';
@@ -651,6 +652,8 @@ const depressionIndices = [2, 4, 9, 12, 15, 16, 20];
 const anxietyIndices = [1, 3, 6, 8, 14, 18, 19];
 const stressIndices = [0, 5, 7, 10, 11, 13, 17];
 
+
+
 // Function to check if a question is a video
 const isVideo = (question) => {
   return [question3, question8, question9, question11, question13, question20].includes(question);
@@ -666,6 +669,7 @@ const Questionnaire = () => {
   const email = searchParams.get('email');
   const navigate = useNavigate();
   const [started, setStarted] = useState(false);
+  const [showSessionTimeout, setShowSessionTimeout] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true); // State to toggle instructions
   const cardVariants = {
       hidden: { scale: 0.8, opacity: 0 },
@@ -715,17 +719,23 @@ const Questionnaire = () => {
         stress_score: resultData.stressScore,
         email: email,
       });
-
+    
       console.log('Results sent successfully:', response.data);
       setApiStatus({ loading: false, success: true, error: null });
     } catch (error) {
       console.error('Error sending results:', error);
+    
+      if (error.response?.status === 401) {
+        setShowSessionTimeout(true); // 👈 trigger component directly
+        return;
+      }
+    
       setApiStatus({
         loading: false,
         success: false,
         error: error.response?.data?.message || 'Failed to send results to server'
       });
-    }
+    }    
   };
 
   // Calculate DASS-21 score
@@ -1212,7 +1222,7 @@ const Questionnaire = () => {
                 <p className="font-medium">Your results have been saved successfully!</p>
               </motion.div>
             )}
-
+            {showSessionTimeout && <SessionTimeout />}
             {apiStatus.error && (
               <motion.div
                 className="bg-red-100 border-l-4 border-red-500 text-red-700 p-2 mb-2 rounded"

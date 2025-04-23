@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { media } from '../components/mediaData';
@@ -6,7 +7,7 @@ import { getRandomizedQuestions } from '../components/getRandomizedQuestions';
 import api from "../api";
 import { ACCESS_TOKEN } from "../constants";
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
-import { FiChevronRight, FiCheck, FiX } from "react-icons/fi";
+// import { FiChevronRight, FiCheck, FiX } from "react-icons/fi";
 import VideoGraphs from "../components/VideoGraphs";
 import Loading from "../components/Loading";
 
@@ -109,15 +110,23 @@ const useVideoRecording = () => {
   const streamRef = useRef(null);
   const recordedChunksRef = useRef([]);
 
+  const cleanupStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log("Track stopped:", track.kind);
+      });
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, []);
+
   const startRecording = useCallback(async () => {
     try {
-      // Clean up previous recording if exists
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
-      if (mediaRecorderRef.current) {
-        mediaRecorderRef.current.stop();
-      }
+      // Clean up any existing stream first
+      cleanupStream();
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
@@ -142,31 +151,33 @@ const useVideoRecording = () => {
       mediaRecorder.onstop = () => {
         const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
         setVideoBlob(blob);
+        cleanupStream(); // Clean up stream when recording stops
       };
 
       mediaRecorder.start();
       setIsRecording(true);
     } catch (error) {
       console.error('Error accessing webcam:', error);
+      cleanupStream();
     }
-  }, []);
+  }, [cleanupStream]);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
     
-    // Ensure we always clean up the stream
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => {
-        track.stop();
-        console.log("Track stopped:", track.kind);
-      });
-      streamRef.current = null;
-    }
-    
+    cleanupStream();
     setIsRecording(false);
-  }, []);
+  }, [cleanupStream]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopRecording();
+      cleanupStream();
+    };
+  }, [stopRecording, cleanupStream]);
 
   return { 
     isRecording, 
@@ -444,12 +455,18 @@ const ExperienceFlow = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [testCompleted, setTestCompleted] = useState(false);
-        const [searchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const email = searchParams.get('email');
   const fromComponent = searchParams.get('fromComponent');
-    const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
-
+  const { 
+      isRecording, 
+      videoBlob, 
+      videoRef, 
+      startRecording, 
+      stopRecording 
+    } = useVideoRecording();
 
   const streamRef = useRef(null);
 
@@ -458,14 +475,7 @@ const ExperienceFlow = () => {
     responses, 
     setResponses 
   });
-  
-  const { 
-    isRecording, 
-    videoBlob, 
-    videoRef, 
-    startRecording, 
-    stopRecording 
-  } = useVideoRecording();
+
 
   // Handle prediction API call
   const handlePredict = useCallback(async (videoBlob, responses) => {

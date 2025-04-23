@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from django.db.models import Avg
 from rest_framework.exceptions import PermissionDenied
 
-client = Client("Karanjain09/Text_Analysis")  # Replace with your Gradio app name
+client = Client("Karanjain2003/Text_Analysis")  # Replace with your Gradio app name
 
 class DiaryEntryViewSet(viewsets.ModelViewSet):
     """API to manage diary entries."""

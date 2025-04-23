@@ -342,10 +342,7 @@ const SignUp = () => {
           // Success animation before redirect
           const successMessage = document.getElementById('successMessage');
           successMessage.classList.remove('hidden');
-          
-          setTimeout(() => {
             navigate('/login'); // Redirect to the login page after success animation
-          }, 1500);
         }
     } catch (error) {
       setIsSubmitting(false);

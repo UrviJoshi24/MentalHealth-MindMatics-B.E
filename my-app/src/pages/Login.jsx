@@ -74,9 +74,7 @@ const Login = () => {
         localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
         
         // Show success animation before redirecting
-        setTimeout(() => {
           navigate('/home');
-        }, 500);
       }
     } catch (error) {
       console.error('login failed', error.response ? error.response.data : error.message);
